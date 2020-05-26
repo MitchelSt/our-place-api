@@ -2,6 +2,7 @@ const express = require('express')
 const app = express()
 
 const placesRoutes = require('./routes/places-routes')
+const usersRoutes = require('./routes/users-routes')
 
 
 app.use(express.urlencoded({ extended: false }))
@@ -9,6 +10,7 @@ app.use(express.json())
 
 
 app.use('/api/places', placesRoutes)
+app.use('/api/users', usersRoutes)
 
 app.use((req, res, next) => {
     const error = new Error('Could not find this route', 404)
