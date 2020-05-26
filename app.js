@@ -1,5 +1,7 @@
 const express = require('express')
 const app = express()
+const { errors } = require('celebrate');
+
 
 const placesRoutes = require('./routes/places-routes')
 const usersRoutes = require('./routes/users-routes')
@@ -8,6 +10,7 @@ const usersRoutes = require('./routes/users-routes')
 app.use(express.urlencoded({ extended: false }))
 app.use(express.json())
 
+app.use(errors())
 
 app.use('/api/places', placesRoutes)
 app.use('/api/users', usersRoutes)
