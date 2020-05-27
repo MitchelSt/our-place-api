@@ -1,55 +1,85 @@
-const HttpError = require('../models/http-error')
-const { v4: uuid } = require("uuid")
+const HttpError = require('../models/http-error');
+
+const User = require('../models/mongoose-schemas/user-schema');
 
 
-let DUMMY_USERS = [{
-    id: 'u1',
-    name: 'Mitchel',
-    email: 'Mitchel@github.com',
-    password: 'cookies'
-}, {
-    id: 'u2',
-    name: 'John',
-    email: 'John@Doe.com',
-    password: 'cookies2'
-}]
-
-const getUsers = (req, res, next) => {
-    res.status(200).json({ users: DUMMY_USERS })
-}
-
-const signup = (req, res, next) => {
-    const { name, email, password } = req.body
-
-    const hasUser = DUMMY_USERS.find(user => user.email === email)
-    if (hasUser) {
-        return res.status(409).json('Could not create user.')
+const getUsers = async (req, res, next) => {
+    let users;
+    try {
+        users = await User.find({}, '-password');
+    } catch (err) {
+        const error = new HttpError(
+            'Could not get users.',
+            500
+        );
+        return next(error);
     }
 
-    const createdUser = {
-        id: uuid(),
+    res.status(200).json({ users: users.map(user => user.toObject({ getters: true })) });
+};
+
+const signup = async (req, res, next) => {
+    const { name, email, password } = req.body;
+
+    let existingUser;
+    try {
+        const existingUser = User.findOne({ email: email });
+    } catch (err) {
+        const error = new HttpError(
+            'Could not create user.',
+            500
+        );
+        return next(error);
+    }
+
+    if (existingUser) {
+        const error = new HttpError(
+            'User already exists.',
+            409
+        );
+        return next(error);
+    }
+
+    const createdUser = new User({
         name,
         email,
-        password
+        image: 'https://images.unsplash.com/photo-1586297098710-0382a496c814?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1350&q=80',
+        password,
+        places: []
+    });
+
+    try {
+        await createdUser.save();
+    } catch (err) {
+        const error = new HttpError(
+            'Could not create user.',
+            500
+        );
+        return next(error);
     }
 
-    DUMMY_USERS.push(createdUser)
+    res.status(201).json({ user: createdUser.toObject({ getters: true }) });
+};
 
-    res.status(200).json({ user: createdUser })
-}
+const login = async (req, res, next) => {
+    const { email, password } = req.body;
 
-const login = (req, res, next) => {
-    const { email, password } = req.body
+    const identfiedUser = await User.findOne({ email: email });
 
-    const identfiedUser = DUMMY_USERS.find(user => user.email === email)
-    if (!identfiedUser || identfiedUser.password !== password) {
-        return next(new HttpError('Credentials seem to be wrong.', 401))
+    try {
+        identfiedUser.password === password;
+    } catch (err) {
+        const error = new HttpError(
+            'Credentials seem to be wrong.',
+            401
+        );
+        return next(error);
     }
 
-    res.status(200).json('Login in successful')
-}
+    res.status(200).json('Login in successful');
+};
 
 
-exports.getUsers = getUsers
-exports.signup = signup
-exports.login = login
+exports.getUsers = getUsers;
+exports.signup = signup;
+exports.login = login;
