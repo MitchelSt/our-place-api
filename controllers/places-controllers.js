@@ -1,7 +1,9 @@
-const HttpError = require('../models/http-error');
+const fs = require('fs');
 const mongoose = require('mongoose');
-const getCoordinates = require('../util/location');
+const { v4: uuidv4 } = require('uuid');
 
+const getCoordinates = require('../util/location');
+const HttpError = require('../models/http-error');
 const Place = require('../models/mongoose-schemas/place-schema');
 const User = require('../models/mongoose-schemas/user-schema');
 
@@ -52,6 +54,7 @@ const getPlacesByUserId = async (req, res, next) => {
 
 const createPlace = async (req, res, next) => {
     const { title, description, address, creator } = req.body;
+    const image = req.files.image;
 
     let coordinates;
     try {
@@ -60,10 +63,15 @@ const createPlace = async (req, res, next) => {
         return next(error);
     }
 
+    const updatedImage = { ...image, id: uuidv4() };
+    updatedImage.mv(`./uploads/images/${updatedImage.id}.jpeg`, function (error) {
+        if (error) return error;
+    });
+
     const createdPlace = new Place({
         title,
         description,
-        imageUrl: 'https://images.unsplash.com/photo-1590494349797-9af9ccd2245a?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=634&q=80',
+        imageUrl: `uploads/images/${updatedImage.id}.jpeg`,
         address,
         location: coordinates,
         creator
@@ -82,19 +90,14 @@ const createPlace = async (req, res, next) => {
 
     if (!user) {
         const error = new HttpError(
-            'Could not find user for provide id.',
+            'Could not find user for provided id.',
             500
         );
         next(error);
     }
 
     try {
-        const session = await mongoose.startSession();
-        session.startTransaction();
-        await createdPlace.save({ session: session });
-        user.places.push(createdPlace);
-        await user.save({ session: session });
-        await session.commitTransaction();
+        await createdPlace.save();
     } catch (err) {
         const error = new HttpError(
             'Could not create place.',
@@ -138,11 +141,11 @@ const updatePlaceById = async (req, res, next) => {
 };
 
 const deletePlaceById = async (req, res, next) => {
-    const placeId = req.params.placeId;
-
     let place;
     try {
+        const placeId = req.params.placeId;
         place = await Place.findById(placeId).populate('creator');
+        //xxx console.log(1, 'image url', place.imageUrl);
     } catch (err) {
         const error = new HttpError(
             'Could not get place.',
@@ -159,17 +162,15 @@ const deletePlaceById = async (req, res, next) => {
     }
 
     try {
-        const session = await mongoose.startSession();
-        session.startTransaction();
-        await place.remove({ session: session });
-        place.creator.places.pull(place);
-        await place.creator.save({ session: session });
-        await session.commitTransaction();
+        await place.delete();
+        fs.unlink(`./${place.imageUrl}`, error => console.log(error));
     } catch (err) {
         const error = new HttpError(
             'Could not delete place.',
             500
         );
+        console.log(err);
+
         return next(error);
     }
 

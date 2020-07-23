@@ -1,4 +1,5 @@
 const HttpError = require('../models/http-error');
+const { v4: uuidv4 } = require('uuid');
 
 const User = require('../models/mongoose-schemas/user-schema');
 
@@ -20,10 +21,12 @@ const getUsers = async (req, res, next) => {
 
 const signup = async (req, res, next) => {
     const { name, email, password } = req.body;
+    const image = req.files.image;
+    console.log(image);
 
     let existingUser;
     try {
-        const existingUser = User.findOne({ email: email });
+        existingUser = User.findOne({ email: email });
     } catch (err) {
         const error = new HttpError(
             'Could not create user.',
@@ -31,8 +34,8 @@ const signup = async (req, res, next) => {
         );
         return next(error);
     }
-
-    if (existingUser) {
+    //xxx fix existingUser
+    if (!existingUser) {
         const error = new HttpError(
             'User already exists.',
             409
@@ -40,10 +43,16 @@ const signup = async (req, res, next) => {
         return next(error);
     }
 
+    const updatedImage = { ...image, id: uuidv4() };
+    updatedImage.mv(`./uploads/images/${updatedImage.id}.jpeg`, function (error) {
+        if (error) return error;
+    });
+
+
     const createdUser = new User({
         name,
         email,
-        image: 'https://images.unsplash.com/photo-1586297098710-0382a496c814?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1350&q=80',
+        image: `uploads/images/${updatedImage.id}.jpeg`,
         password,
         places: []
     });
@@ -64,10 +73,10 @@ const signup = async (req, res, next) => {
 const login = async (req, res, next) => {
     const { email, password } = req.body;
 
-    const identfiedUser = await User.findOne({ email: email });
+    const existingUser = await User.findOne({ email: email });
 
     try {
-        identfiedUser.password === password;
+        existingUser.password === password;
     } catch (err) {
         const error = new HttpError(
             'Credentials seem to be wrong.',
@@ -76,7 +85,10 @@ const login = async (req, res, next) => {
         return next(error);
     }
 
-    res.status(200).json('Login in successful');
+    res.status(200).json({
+        message: 'Login in successful',
+        user: existingUser.toObject({ getters: true })
+    });
 };
 
 
