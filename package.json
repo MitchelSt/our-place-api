@@ -1,7 +1,7 @@
 {
   "name": "our-places-api",
   "version": "1.0.0",
-  "description": "",
+  "description": "ourplaces api",
   "main": "index.js",
   "scripts": {
     "start": "node app.js "
