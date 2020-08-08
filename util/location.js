@@ -4,7 +4,7 @@ const HttpError = require('../models/http-error');
 
 
 async function getCoordinates(address) {
-    const response = await axios.get(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${process.env.GOOGLE_MAPS_API_KEY}`);
+    const response = await axios.get(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${ENV.GOOGLE_MAPS_API_KEY}`);
 
     const data = response.data;
 

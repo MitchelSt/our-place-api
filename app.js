@@ -43,7 +43,7 @@ app.use((error, req, res, next) => {
 
 
 mongoose
-    .connect(`mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@cluster0-mb0nt.mongodb.net/${process.env.DB_NAME}?retryWrites=true&w=majority`, {
+    .connect(`mongodb+srv://${ENV.DB_USERNAME}:${ENV.DB_PASSWORD}@cluster0-mb0nt.mongodb.net/${ENV.DB_NAME}?retryWrites=true&w=majority`, {
         useNewUrlParser: true,
         useUnifiedTopology: true
     })

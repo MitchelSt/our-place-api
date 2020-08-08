@@ -7,7 +7,7 @@ function authenticateToken(req, res, next) {
 
     if (!token) return res.status(401).json({ message: 'Could not find token' });
 
-    jwt.verify(token, process.env.JWT_SECRET, (err, userId) => {
+    jwt.verify(token, ENV.JWT_SECRET, (err, userId) => {
         console.log(err);
         if (err) return res.status(403).json({ message: 'Could not verify token' });
         req.userId = userId;
