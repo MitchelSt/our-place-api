@@ -40,7 +40,7 @@ const signup = async (req, res, next) => {
         );
         return next(error);
     }
-    //xxx fix existingUser
+
     if (!existingUser) {
         const error = new HttpError(
             'User already exists.',
